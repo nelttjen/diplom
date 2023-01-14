@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block head %}
+    <title>Индекс</title>
+    <script src="{% static "app/js/index.js" %}?r={% now "jS F Y H:i" %}"></script>
+{% endblock %}
+{% block container %}
+    <div class="page-container">
+        <div class="all_groups" style="border: 1px solid darkcyan; width: 500px; padding: 5px;">
+            <button id="generate-btn" class="btn btn-primary">Сгенерировать</button><br>
+        Выбранные группы:
+        </div>
+        <div class="group-input" style="padding: 10px; border: 1px solid orange; width: 500px;">
+                <label for="group-select">Выберите группу</label>
+                <select name="group-select" id="group-select">
+                {% for group in groups %}
+                    <option value="{{ group.id }}">{{ group.name }}</option>
+                {% endfor %}
+                </select>
+                <button id="btn-add-group" class="btn btn-primary">Добавить</button>
+    {#            {% for lesson in lessons %}#}
+    {#                <div class="group-lesson-input mt-3">#}
+    {#                Кол-во пар - {{ lesson.name }}:#}
+    {#                    <label for="lesson-number-input" class="form-label" ></label>#}
+    {#                    <input type="number" value="4" id="lesson-number-input" class="form-control">#}
+    {#                </div>#}
+    {#            {% endfor %}#}
+        </div>
+    </div>
+{% endblock %}
