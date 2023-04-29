@@ -1,9 +1,10 @@
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.exceptions import ParseError, NotFound
 
 from app.modules import query_debugger
 from app.models import *
-from app.serializers.default import DefaultSerializer
+from diplom.serializers.default import DefaultSerializer
 from app.serializers.group_lessons import GroupsListSerializer, GroupLessonsSerializer
 
 
@@ -13,7 +14,7 @@ class GroupLessonsView(APIView):
     def get(self, request):
         group = request.GET.get('group', None)
         if not group or not (group := Group.objects.filter(id=group, is_active=True).first()):
-            return Response(DefaultSerializer({'msg': 'not found'}).data, status=404)
+            raise NotFound('group not found')
         lessons = Lesson.objects.filter(group=group, is_active=True).all()
         return Response(DefaultSerializer({
             'msg': 'ok',

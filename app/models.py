@@ -14,6 +14,7 @@ class Lesson(models.Model):
         return f'Пара: {self.name}'
 
     class Meta:
+        db_table = 'lessons'
         verbose_name = 'Пара'
         verbose_name_plural = 'Пары'
 
@@ -27,6 +28,7 @@ class Cabinet(models.Model):
         return f'Кабинет {self.name}'
 
     class Meta:
+        db_table = 'cabinets'
         verbose_name = 'Кабинет'
         verbose_name_plural = 'Кабинеты'
 
@@ -42,6 +44,7 @@ class Group(models.Model):
         return f'Группа {self.name}'
 
     class Meta:
+        db_table = 'groups'
         verbose_name = 'Группа'
         verbose_name_plural = 'Группы'
 
@@ -50,3 +53,12 @@ class Teacher(models.Model):
     first_name = models.CharField(verbose_name='Имя', max_length=1000)
     last_name = models.CharField(verbose_name='Фамилия', max_length=1000)
     is_active = models.BooleanField(verbose_name='Используется?', default=True)
+    
+    def __str__(self):
+        return f'Препод {self.first_name} {self.last_name}'
+    
+    class Meta:
+        db_table = 'teachers'
+        verbose_name = 'Препод'
+        verbose_name_plural = 'Преподы'
+    

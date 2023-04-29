@@ -1,0 +1,110 @@
+version: "3.7"
+
+services:
+  redis:
+    image: redis:alpine
+    restart: always
+    container_name: redis-diplom
+    ports:
+      - "6379:6379"
+    networks:
+      - redis_celery_network
+
+  celery:
+    image: celery-app
+    restart: unless-stopped
+    build: .
+    container_name: celery-diplom
+    command:
+      - celery
+      - -A
+      - diplom.celery_app
+      - worker
+      - -B
+      - --loglevel=INFO
+      - --concurrency=14
+    volumes:
+      - .:/app/
+    depends_on:
+      - redis
+      - django
+      - postgres_db
+    networks:
+      - postgres_network
+      - redis_celery_network
+
+  django-migrate:
+    image: docker-app:django
+    container_name: django-migrate-diplom
+    build: .
+    command:
+      - sh
+      - -c
+      - "python manage.py makemigrations && echo 'migrations done, migrating...' && python manage.py migrate"
+    networks:
+      - postgres_network
+
+  django:
+    image: docker-app:django
+    container_name: django-app-diplom
+    build: .
+    volumes:
+      - .:/app/
+    ports:
+      - "8000:8000"
+    depends_on:
+      - redis
+      - postgres_db
+    networks:
+      - postgres_network
+
+  postgres_db:
+    restart: always
+    image: postgres
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    env_file:
+      - ./diplom/.env
+    container_name: postgres_db-diplom
+    ports:
+      - "5432:5432"
+    networks:
+      - postgres_network
+    expose:
+      - 5432
+
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    ports:
+      - "5454:5454/tcp"
+    env_file:
+      - ./diplom/.env
+    depends_on:
+      - postgres_db
+    expose:
+      - 5432
+    container_name: pgadmin-diplom
+    networks:
+      - postgres_network
+
+  dashboard:
+    image: mher/flower
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - FLOWER_PORT=9000
+    ports:
+      - "9000:9000"
+    container_name: chvetochek-diplom
+    networks:
+      - redis_celery_network
+
+volumes:
+  pgdata:
+
+networks:
+  postgres_network:
+    name: default-pg-network
+    driver: bridge
+  redis_celery_network:
+    name: nw-redis-celery
