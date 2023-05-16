@@ -29,9 +29,11 @@ services:
       - redis
       - django
       - postgres_db
+      - django-migrate
     networks:
       - postgres_network
       - redis_celery_network
+
 
   django-migrate:
     image: docker-app:django
@@ -43,6 +45,8 @@ services:
       - "python manage.py makemigrations && echo 'migrations done, migrating...' && python manage.py migrate"
     networks:
       - postgres_network
+    depends_on:
+      - redis
 
   django:
     image: docker-app:django
@@ -55,6 +59,7 @@ services:
     depends_on:
       - redis
       - postgres_db
+      - django-migrate
     networks:
       - postgres_network
 
@@ -96,6 +101,8 @@ services:
     ports:
       - "9000:9000"
     container_name: chvetochek-diplom
+    depends_on:
+      - redis
     networks:
       - redis_celery_network
 

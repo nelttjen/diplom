@@ -1,14 +1,109 @@
 import functools
+import random
 import time
+from typing import Dict
 
 from django.db import connection, reset_queries
 
 from diplom.settings import DEBUG
+from app.typing import SettingsRequest, GenerateList
+from app.models import GeneratedLessons, Group, Lesson
 
 
 class LessonsGenerator:
-    def __init__(self):
-        pass
+    def __init__(self, settings: SettingsRequest):
+        self.settings = settings
+
+        self.generated = GenerateList()
+
+        self.random_pair_choices = (
+            (1, 2, 3, 4, 5, 6),
+            (2, 3, 1, 4, 5, 6),
+            (3, 4, 1, 2, 5, 6),
+        )
+
+        self.days = (
+            'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'
+        )
+
+        self.groups = []
+        self.lessons = []
+
+    def _dict_from_queryset(self, queryset):
+        ret = {}
+
+        for model in queryset:
+            ret[model.id] = model
+        return ret
+
+    def get_groups(self, group_ids) -> Dict[int, 'Group']:
+        return self._dict_from_queryset(Group.objects.filter(id__in=group_ids))
+
+    def get_lessons(self, lesson_ids) -> Dict[int, 'Lesson']:
+        return self._dict_from_queryset(Lesson.objects.filter(id__in=lesson_ids).select_related('teacher', 'cabinet'))
+
+    def split_lessons(self, gr_id):
+        for lesson in self.settings.groups[gr_id]:
+            if lesson.count > 2:
+                new_lesson = lesson.copy()
+                new_lesson.count -= 2
+                self.settings.groups[gr_id].append(new_lesson)
+                lesson.count = 2
+
+    def generate(self):
+        group_ids = list(self.settings.groups.keys())
+        lesson_ids = []
+        for key in group_ids:
+            lesson_ids.extend([lesson.id for lesson in self.settings.groups[key]])
+
+        self.groups, self.lessons = self.get_groups(group_ids), self.get_lessons(lesson_ids)
+
+        random.shuffle(group_ids)
+
+        while group_ids:
+            gr_id = group_ids.pop()
+
+            group = self.groups[gr_id]
+
+            self.generated.add_group(gr_id)
+
+            for lesson in self.settings.groups[gr_id]:
+                self.split_lessons(gr_id)
+                gr_lesson = self.lessons[lesson.id]
+
+                cabinet = gr_lesson.cabinet_id
+                teacher = gr_lesson.teacher_id
+
+                random_days = list(self.days)
+                random.shuffle(random_days)
+
+                while random_days:
+                    if lesson.count == 0:
+                        break
+
+                    day = random_days.pop(0)
+
+                    setup = list(random.choice(self.random_pair_choices))
+
+                    while setup:
+                        index = setup.pop(0)
+
+                        if not self.generated.is_available(day=day, index=index, cabinet=cabinet, teacher=teacher):
+                            continue
+                        if len(getattr(self.generated, day)[gr_id]) >= group.max_day:
+                            continue
+
+                        self.generated.set_lesson_for_group(day=day, index=index,
+                                                            cabinet=cabinet, teacher=teacher,
+                                                            group=gr_id, lesson=lesson.id)
+                        lesson.count -= 1
+                        break
+
+                if lesson.count:
+                    raise Exception(f'{self.lessons[lesson.id].name}: cabinet or teacher reached limit')
+        print(self.generated)
+
+
 
 
 def query_debugger(func):

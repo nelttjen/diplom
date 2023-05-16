@@ -1,0 +1,160 @@
+from __future__ import annotations
+
+import pydantic
+
+from typing import List, Dict
+
+
+class SettingsGroup(pydantic.BaseModel):
+    id: int = pydantic.Field(default=..., alias='lesson_id')
+    count: int = pydantic.Field(default=..., alias='count')
+
+    class Config(pydantic.BaseConfig):
+        extra = 'allow'
+
+
+class SettingsRequest(pydantic.BaseModel):
+    groups: Dict[int, List['SettingsGroup']]
+
+
+class GenerateLesson(pydantic.BaseModel):
+    id: int
+    teacher: int
+    cabinet: int
+    index: int
+
+
+class StatisticForTeacherDays(pydantic.BaseModel):
+    monday: Dict[int, int]
+    tuesday: Dict[int, int]
+    wednesday: Dict[int, int]
+    thursday: Dict[int, int]
+    friday: Dict[int, int]
+    saturday: Dict[int, int]
+
+    @classmethod
+    def default(cls):
+        return cls.parse_obj({
+            'monday': {},
+            'tuesday': {},
+            'wednesday': {},
+            'thursday': {},
+            'friday': {},
+            'saturday': {},
+        })
+
+
+class GenerateList(pydantic.BaseModel):
+    monday: Dict[int, List['GenerateLesson']] = pydantic.Field(default={})
+    tuesday: Dict[int, List['GenerateLesson']] = pydantic.Field(default={})
+    wednesday: Dict[int, List['GenerateLesson']] = pydantic.Field(default={})
+    thursday: Dict[int, List['GenerateLesson']] = pydantic.Field(default={})
+    friday: Dict[int, List['GenerateLesson']] = pydantic.Field(default={})
+    saturday: Dict[int, List['GenerateLesson']] = pydantic.Field(default={})
+
+    statistic: 'StatisticForTeacherDays' = pydantic.Field(default=StatisticForTeacherDays.default())
+
+    def get_count_teacher_for_day(self, day, teacher_id):
+
+        daily_dict: Dict[int, int] = getattr(self.statistic, day)
+
+        count = daily_dict.get(teacher_id, None)
+        if count is None:
+            daily_dict[teacher_id] = 0
+            count = 0
+        return count
+
+    def teacher_check_lessons_for_day(self, day, teacher_id, max_lessons_for_day):
+        return max_lessons_for_day > self.get_count_teacher_for_day(day, teacher_id)
+
+    def is_cabinet_available(self, day, cabinet_id, index):
+        day_dict: Dict[int, List['GenerateLesson']] = getattr(self, day)
+
+        for group_lessons in day_dict.values():
+            for lesson in group_lessons:
+                lesson: 'GenerateLesson'
+                if lesson.index == index and lesson.cabinet == cabinet_id:
+                    return False
+        return True
+
+    def is_teacher_available(self, day, teacher_id, index):
+        day_dict: Dict[int, List['GenerateLesson']] = getattr(self, day)
+
+        for group_lessons in day_dict.values():
+            for lesson in group_lessons:
+                lesson: 'GenerateLesson'
+                if lesson.index == index and lesson.teacher == teacher_id:
+                    return False
+        return True
+
+    def fields(self):
+        return [self.monday, self.tuesday, self.wednesday, self.thursday, self.friday, self.saturday]
+
+    def add_group(self, gr_id):
+        for field in self.fields():
+            field[gr_id] = []
+
+    def is_available(self, day, index, cabinet, teacher):
+        return self.is_cabinet_available(day=day, cabinet_id=cabinet, index=index) and \
+            self.is_teacher_available(day=day, teacher_id=teacher, index=index)
+
+    def set_lesson_for_group(self, day, index, group, lesson, cabinet, teacher):
+        field = getattr(self, day)
+
+        field[group].append(GenerateLesson.parse_obj({
+            'id': lesson, 'teacher': teacher, 'cabinet': cabinet, 'index': index
+        }))
+        field[group] = sorted(field[group], key=lambda x: x.index)
+
+        try:
+            getattr(self.statistic, day)[teacher] += 1
+        except:
+            getattr(self.statistic, day)[teacher] = 1
+
+    def to_representation(self, groups, lessons):
+        represent = self.dict()
+        represent_copy = {}
+        for field in represent.keys():
+            represent_copy[field] = {}
+
+        for key, val in represent.items():
+            if key == 'statistic':
+                continue
+            for group_id, lessons_list in val.items():
+                print(group_id, lessons_list)
+                represent_lessons = []
+
+                model_group = groups[group_id]
+                represent_key = model_group.name
+                for lesson in lessons_list:
+                    model = lessons[lesson['id']]
+                    represent_lessons.append({
+                        'lesson_name': model.name,
+                        'lesson_teacher': f'{model.teacher.first_name} {model.teacher.last_name}',
+                        'lesson_cabinet': model.cabinet.name,
+                        'lesson_index': lesson['index']
+                    })
+                represent_copy[key][represent_key] = represent_lessons
+
+        teachers = set()
+
+        for less in lessons.values():
+            teachers.add(less.teacher)
+
+        for key, val in represent['statistic'].items():
+            day_teachers = []
+
+            for teacher_id, teacher_count in val.items():
+                teacher_name = ''
+
+                for model in teachers:
+                    if model.id == teacher_id:
+                        teacher_name = f'{model.first_name} {model.last_name}'
+
+                day_teachers.append(
+                    {'teacher_name': teacher_name, 'count': teacher_count}
+                )
+
+            represent_copy['statistic'][key] = day_teachers
+
+        return represent_copy

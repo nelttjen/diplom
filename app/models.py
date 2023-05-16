@@ -4,14 +4,13 @@ from django.db import models
 # Create your models here.
 class Lesson(models.Model):
     name = models.CharField(verbose_name='Название пары', max_length=1000)
-    require_comp = models.BooleanField(verbose_name='Нужен компьютерный класс?', default=False)
     is_active = models.BooleanField(verbose_name='Используется?', default=True)
 
-    cabinets = models.ManyToManyField(verbose_name='Кабинеты', to='app.Cabinet')
-    teacher = models.ForeignKey(verbose_name='Препод', to='app.Teacher', on_delete=models.SET_NULL, null=True, default=None)
+    cabinet = models.ForeignKey(verbose_name='Кабинеты', to='app.Cabinet', on_delete=models.SET_NULL, null=True, default=None, blank=True)
+    teacher = models.ForeignKey(verbose_name='Препод', to='app.Teacher', on_delete=models.SET_NULL, null=True, default=None, blank=True)
 
     def __str__(self):
-        return f'Пара: {self.name}'
+        return f'Пара: {self.name} - Кабинет {self.cabinet.name}'
 
     class Meta:
         db_table = 'lessons'
@@ -22,7 +21,6 @@ class Lesson(models.Model):
 class Cabinet(models.Model):
     name = models.IntegerField(verbose_name='Кабинет')
     is_comp = models.BooleanField(verbose_name='Компьютерный кабинет?', default=False)
-    is_active = models.BooleanField(verbose_name='Используется?', default=True)
 
     def __str__(self):
         return f'Кабинет {self.name}'
@@ -52,7 +50,6 @@ class Group(models.Model):
 class Teacher(models.Model):
     first_name = models.CharField(verbose_name='Имя', max_length=1000)
     last_name = models.CharField(verbose_name='Фамилия', max_length=1000)
-    is_active = models.BooleanField(verbose_name='Используется?', default=True)
     
     def __str__(self):
         return f'Препод {self.first_name} {self.last_name}'
@@ -61,4 +58,12 @@ class Teacher(models.Model):
         db_table = 'teachers'
         verbose_name = 'Препод'
         verbose_name_plural = 'Преподы'
-    
+
+
+class GeneratedLessons(models.Model):
+    weekdays = models.JSONField(verbose_name='Рассписание')
+
+    created_at = models.DateTimeField(verbose_name='Дата создания', editable=False, auto_now_add=True)
+
+    class Meta:
+        db_table = 'generated_lessons'

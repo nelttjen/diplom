@@ -1,7 +1,7 @@
 let used_groups = [];
 let last_selected = null;
 let last_selected_name = null;
-let commit_values = [];
+let commit_values = {};
 
 function get_response(response) {
     let raw = response;
@@ -64,9 +64,10 @@ function commit_group() {
         };
         values.push(new_obj);
     });
-    let obj_ = {};
-    obj_[last_selected] = values;
-    commit_values.push(obj_);
+    // let obj_ = {};
+    // obj_[last_selected] = values;
+    // commit_values.push(obj_);
+    commit_values[last_selected] = values
     
     let exclude_groups = used_groups.join(',');
     $.ajax({
@@ -113,6 +114,22 @@ function commit_group() {
     });
 }
 
+function generate() {
+    console.log(commit_values);
+
+    $.ajax({
+        type: "POST",
+        url: "http://localhost:8000/api/group/lessons/",
+        data: {groups: JSON.stringify(commit_values)},
+    }).done((r) => {
+        response = get_response(r);
+        alert("ok");
+    }).fail((r) => {
+        response = get_response(r);
+        alert(response.msg);
+    });
+}
+
 function buttons() { 
     $("#btn-add-group").click(function (e) { 
         e.preventDefault();
@@ -121,6 +138,10 @@ function buttons() {
     $('#lessons-commit').click((e) => {
         e.preventDefault();
         commit_group();
+    });
+    $("#generate-btn").click(function (e) { 
+        e.preventDefault();
+        generate();
     });
 }
 
