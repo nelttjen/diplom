@@ -1,4 +1,5 @@
 import functools
+import json
 import random
 import time
 from typing import Dict
@@ -11,15 +12,15 @@ from app.models import GeneratedLessons, Group, Lesson
 
 
 class LessonsGenerator:
-    def __init__(self, settings: SettingsRequest):
+    def __init__(self, settings: SettingsRequest, name: str):
         self.settings = settings
 
         self.generated = GenerateList()
 
         self.random_pair_choices = (
-            (1, 2, 3, 4, 5, 6),
-            (2, 3, 1, 4, 5, 6),
-            (3, 4, 1, 2, 5, 6),
+            (1, 2, 3, 4),
+            (2, 3, 4, 1),
+            (3, 4, 1, 2),
         )
 
         self.days = (
@@ -28,6 +29,8 @@ class LessonsGenerator:
 
         self.groups = []
         self.lessons = []
+
+        self.name = name
 
     def _dict_from_queryset(self, queryset):
         ret = {}
@@ -67,8 +70,11 @@ class LessonsGenerator:
 
             self.generated.add_group(gr_id)
 
-            for lesson in self.settings.groups[gr_id]:
-                self.split_lessons(gr_id)
+            self.split_lessons(gr_id)
+
+            group_lesson_list = sorted(self.settings.groups[gr_id], key=lambda x: (x.count, x.lesson_name), reverse=True)
+
+            for lesson in group_lesson_list:
                 gr_lesson = self.lessons[lesson.id]
 
                 cabinet = gr_lesson.cabinet_id
@@ -78,17 +84,21 @@ class LessonsGenerator:
                 random.shuffle(random_days)
 
                 while random_days:
+                    day = random_days.pop(0)
+
                     if lesson.count == 0:
                         break
-
-                    day = random_days.pop(0)
 
                     setup = list(random.choice(self.random_pair_choices))
 
                     while setup:
                         index = setup.pop(0)
 
-                        if not self.generated.is_available(day=day, index=index, cabinet=cabinet, teacher=teacher):
+                        if lesson.count == 0:
+                            continue
+
+                        if not self.generated.is_available(day=day, index=index, cabinet=cabinet, teacher=teacher,
+                                                           group=gr_id):
                             continue
                         if len(getattr(self.generated, day)[gr_id]) >= group.max_day:
                             continue
@@ -97,13 +107,15 @@ class LessonsGenerator:
                                                             cabinet=cabinet, teacher=teacher,
                                                             group=gr_id, lesson=lesson.id)
                         lesson.count -= 1
-                        break
-
                 if lesson.count:
                     raise Exception(f'{self.lessons[lesson.id].name}: cabinet or teacher reached limit')
-        print(self.generated)
 
-
+        ret_dict = self.generated.to_representation(groups=self.groups, lessons=self.lessons)
+        GeneratedLessons.objects.create(
+            name=self.name,
+            weekdays=ret_dict
+        )
+        return ret_dict
 
 
 def query_debugger(func):

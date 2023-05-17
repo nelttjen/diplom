@@ -87,6 +87,15 @@ class GenerateList(pydantic.BaseModel):
                     return False
         return True
 
+    def is_index_available(self, day, index, group):
+        day_dict: Dict[int, List['GenerateLesson']] = getattr(self, day)
+
+        for lesson in day_dict[group]:
+            lesson: 'GenerateLesson'
+            if lesson.index == index:
+                return False
+        return True
+
     def fields(self):
         return [self.monday, self.tuesday, self.wednesday, self.thursday, self.friday, self.saturday]
 
@@ -94,9 +103,19 @@ class GenerateList(pydantic.BaseModel):
         for field in self.fields():
             field[gr_id] = []
 
-    def is_available(self, day, index, cabinet, teacher):
-        return self.is_cabinet_available(day=day, cabinet_id=cabinet, index=index) and \
-            self.is_teacher_available(day=day, teacher_id=teacher, index=index)
+    def is_available(self, day, index, cabinet, teacher, group):
+        av_cab = self.is_cabinet_available(day=day, cabinet_id=cabinet, index=index)
+        av_teacher = self.is_teacher_available(day=day, teacher_id=teacher, index=index)
+        av_index = self.is_index_available(day=day, index=index, group=group)
+
+        available = av_cab and av_teacher and av_index
+
+        # print('cab', day, cabinet, av_cab)
+        # print('teacher', day, teacher, av_teacher)
+        # print('index', day, index, av_index)
+        # print('total for day', day, available)
+
+        return available
 
     def set_lesson_for_group(self, day, index, group, lesson, cabinet, teacher):
         field = getattr(self, day)
@@ -115,17 +134,22 @@ class GenerateList(pydantic.BaseModel):
         represent = self.dict()
         represent_copy = {}
         for field in represent.keys():
-            represent_copy[field] = {}
+            val = []
+            if field == 'statistic':
+                val = {}
+            represent_copy[field] = val
+
+        teachers = set()
+
+        for less in lessons.values():
+            teachers.add(less.teacher)
 
         for key, val in represent.items():
             if key == 'statistic':
                 continue
             for group_id, lessons_list in val.items():
-                print(group_id, lessons_list)
                 represent_lessons = []
 
-                model_group = groups[group_id]
-                represent_key = model_group.name
                 for lesson in lessons_list:
                     model = lessons[lesson['id']]
                     represent_lessons.append({
@@ -134,12 +158,11 @@ class GenerateList(pydantic.BaseModel):
                         'lesson_cabinet': model.cabinet.name,
                         'lesson_index': lesson['index']
                     })
-                represent_copy[key][represent_key] = represent_lessons
-
-        teachers = set()
-
-        for less in lessons.values():
-            teachers.add(less.teacher)
+                represent_copy[key].append({
+                    'group_id': group_id,
+                    'group_name': groups[group_id].name,
+                    'lessons': represent_lessons
+                })
 
         for key, val in represent['statistic'].items():
             day_teachers = []

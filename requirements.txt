@@ -3,6 +3,8 @@ asgiref==3.6.0
 async-timeout==4.0.2
 billiard==3.6.4.0
 celery==5.2.7
+certifi==2023.5.7
+charset-normalizer==3.1.0
 click==8.1.3
 click-didyoumean==0.3.0
 click-plugins==1.1.1
@@ -12,6 +14,7 @@ django-cors-headers==3.13.0
 django-debug-toolbar==4.0.0
 django-extensions==3.2.1
 djangorestframework==3.14.0
+idna==3.4
 kombu==5.2.4
 prompt-toolkit==3.0.38
 psycopg2-binary==2.9.6
@@ -19,9 +22,11 @@ pydantic==1.10.7
 python-dotenv==1.0.0
 pytz==2022.7
 redis==4.5.4
+requests==2.30.0
 six==1.16.0
 sqlparse==0.4.3
 typing_extensions==4.5.0
 tzdata==2022.7
+urllib3==2.0.2
 vine==5.0.0
 wcwidth==0.2.6

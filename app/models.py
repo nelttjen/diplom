@@ -62,6 +62,7 @@ class Teacher(models.Model):
 
 class GeneratedLessons(models.Model):
     weekdays = models.JSONField(verbose_name='Рассписание')
+    name = models.CharField(verbose_name='Название', max_length=200)
 
     created_at = models.DateTimeField(verbose_name='Дата создания', editable=False, auto_now_add=True)
 

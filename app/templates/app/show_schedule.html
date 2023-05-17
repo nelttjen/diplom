@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block head %}
+    <title>Рассписания</title>
+{% endblock %}
+{% block container %}
+    {{ item.name }}
+    {{ item.weekdays }}
+{% endblock %}

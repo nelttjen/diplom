@@ -31,17 +31,18 @@ class GroupLessonsView(APIView):
     def post(self, request):
 
         settings = json.loads(request.data.get('groups', '{}'))
+        name = request.data.get('name', 'Без имени')
 
         try:
             req_settings = SettingsRequest.parse_obj({'groups': settings})
         except ValidationError as e:
             raise ParseError(f"Wrong settings in request: {e.json()}")
 
-        # try:
-        generator = LessonsGenerator(settings=req_settings)
-        generator.generate()
-        # except Exception as e:
-        #     raise ParseError(f"Невозможно сгенерировать рассписание для выбранного {e}")
+        try:
+            generator = LessonsGenerator(settings=req_settings, name=name)
+            generator.generate()
+        except Exception as e:
+            raise ParseError(f"Невозможно сгенерировать рассписание: {e}")
 
         return Response(DefaultSerializer({
             'msg': 'ok',
