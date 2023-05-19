@@ -1,6 +1,7 @@
 version: "3.7"
 
 services:
+#  BACKEND
   redis:
     image: redis:alpine
     restart: always
@@ -13,8 +14,9 @@ services:
   celery:
     image: celery-app
     restart: unless-stopped
-    build: .
+    build: ./backend/django-app/
     container_name: celery-diplom
+
     command:
       - celery
       - -A
@@ -24,7 +26,7 @@ services:
       - --loglevel=INFO
       - --concurrency=14
     volumes:
-      - .:/app/
+      - ./backend/django-app/:/app/backend/
     depends_on:
       - redis
       - django
@@ -38,7 +40,7 @@ services:
   django-migrate:
     image: docker-app:django
     container_name: django-migrate-diplom
-    build: .
+    build: ./backend/django-app/
     command:
       - sh
       - -c
@@ -52,9 +54,9 @@ services:
   django:
     image: docker-app:django
     container_name: django-app-diplom
-    build: .
+    build: ./backend/django-app/
     volumes:
-      - .:/app/
+      - ./backend/django-app/:/app/backend/
     ports:
       - "8000:8000"
     depends_on:
@@ -70,7 +72,7 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
     env_file:
-      - ./diplom/.env
+      - ./backend/django-app/diplom/.env
     container_name: postgres_db-diplom
     ports:
       - "5432:5432"
@@ -85,7 +87,7 @@ services:
     ports:
       - "5454:5454/tcp"
     env_file:
-      - ./diplom/.env
+      - ./backend/django-app/diplom/.env
     depends_on:
       - postgres_db
     expose:
@@ -106,6 +108,18 @@ services:
       - redis
     networks:
       - redis_celery_network
+
+#    FRONTEND
+  react:
+    container_name: react-diplom
+    build: ./frontend/
+    volumes:
+      - './frontend/:/app/frontend/'
+      - '/app/node_modules'
+    ports:
+      - "3000:3000"
+    environment:
+      - CHOKIDAR_USEPOLLING=true
 
 volumes:
   pgdata:
