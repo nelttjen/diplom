@@ -5,9 +5,38 @@ import {Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow}
 import {Fragment} from "react";
 
 function App() {
-    const {data, isLoading} = useSWR('http://localhost:8000/api/schedules/2/', axios)
+    const {data, isLoading} = useSWR('http://localhost:8000/api/schedules/1/', axios)
 
     if (isLoading) return 'Загрузка...'
+
+    const times = ["9:00", "10:45", "13:00", "14:45", "16:25", "18:15", "19:45"]
+
+    const weekdays = [
+        {
+            "index": 1,
+            "name": "Понедельник"
+        },
+        {
+            "index": 2,
+            "name": "Вторник"
+        },
+        {
+            "index": 3,
+            "name": "Среда"
+        },
+        {
+            "index": 4,
+            "name": "Четверг"
+        },
+        {
+            "index": 5,
+            "name": "Пятница"
+        },
+        {
+            "index": 6,
+            "name": "Суббота"
+        }
+    ]
 
     const schedule = data.data.content
 
@@ -50,13 +79,16 @@ function App() {
                 </TableHead>
                 <TableBody>
                     {Object.entries(schedule.weekdays).map(([key, weekday], i) => {
-                        if (key === 'statistic') return null;
+                        if (key === 'statistic') {
+                            i -= 1
+                            return null;
+                        }
 
                         return (
                             <Fragment key={i}>
                                 <TableRow>
                                     <TableCell>
-                                        {key}
+                                        weekdays.find(lesson => lesson.lesson_index === i)
                                     </TableCell>
                                     <TableCell>
 
@@ -74,7 +106,7 @@ function App() {
                                         {Array.from({length: 7}, (_, i) => (
                                                 <TableRow key={i} colSpan={2}>
                                                     <TableCell>
-                                                        date
+                                                        times[i]
                                                     </TableCell>
                                                 </TableRow>
                                             )

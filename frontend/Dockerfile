@@ -10,4 +10,6 @@ ENV PATH /app/frontend/node_modules/.bin:$PATH
 COPY . /app/frontend/
 RUN npm run build
 
-CMD ["npm", "start"]
+EXPOSE 5173
+
+CMD ["npm", "run", "dev", "--", "--host"]

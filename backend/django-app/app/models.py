@@ -9,6 +9,11 @@ class Lesson(models.Model):
     cabinet = models.ForeignKey(verbose_name='Кабинеты', to='app.Cabinet', on_delete=models.SET_NULL, null=True, default=None, blank=True)
     teacher = models.ForeignKey(verbose_name='Препод', to='app.Teacher', on_delete=models.SET_NULL, null=True, default=None, blank=True)
 
+    def save(self, *args, **kwargs):
+        if not self.cabinet_id or not self.teacher_id:
+            self.is_active = False
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return f'Пара: {self.name} - Кабинет {self.cabinet.name}'
 
@@ -19,8 +24,7 @@ class Lesson(models.Model):
 
 
 class Cabinet(models.Model):
-    name = models.IntegerField(verbose_name='Кабинет')
-    is_comp = models.BooleanField(verbose_name='Компьютерный кабинет?', default=False)
+    name = models.CharField(verbose_name='Кабинет', unique=True, max_length=128)
 
     def __str__(self):
         return f'Кабинет {self.name}'
@@ -29,6 +33,7 @@ class Cabinet(models.Model):
         db_table = 'cabinets'
         verbose_name = 'Кабинет'
         verbose_name_plural = 'Кабинеты'
+        ordering = ('name', )
 
 
 class Group(models.Model):
@@ -68,3 +73,4 @@ class GeneratedLessons(models.Model):
 
     class Meta:
         db_table = 'generated_lessons'
+
