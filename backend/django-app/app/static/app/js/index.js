@@ -22,7 +22,7 @@ function select_group() {
     last_selected = selected.val();
     $.ajax({
         type: "GET",
-        url: `http://localhost:8000/api/group/lessons/?group=${last_selected}`,
+        url: `http://localhost:8000/api/group/${last_selected}/lessons/`,
     }).done((response => {
         response = get_response(response);
         // console.log(response);

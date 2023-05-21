@@ -10,7 +10,7 @@ class GroupListView(APIView):
 
     def get(self, request):
         exclude = request.GET.get('exclude', None)
-        groups = Group.objects.all()
+        groups = Group.objects.filter(is_active=True)
         if exclude is not None:
             groups = groups.exclude(id__in=list(map(int, exclude.split(','))))
         return Response(DefaultSerializer({

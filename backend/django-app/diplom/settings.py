@@ -166,5 +166,9 @@ CACHES = {
 }
 
 DEBUG_TOOLBAR_CONFIG = {
-    'SHOW_TOOLBAR_CALLBACK': lambda x: DEBUG,
+    'SHOW_TOOLBAR_CALLBACK': lambda request: True,
+}
+
+REST_FRAMEWORK = {
+    'EXCEPTION_HANDLER': 'diplom.exceptions.custom_exception_handler',
 }

@@ -5,7 +5,7 @@ from diplom.serializers.default import DefaultSerializer
 
 def custom_exception_handler(exc, context):
     response = exception_handler(exc, context)
-    
+
     if response:
         if not isinstance(exc, ValidationError):
             response.data = DefaultSerializer({'errors': {'msg': str(exc)}}).data

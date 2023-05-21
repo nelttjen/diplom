@@ -5,20 +5,19 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.exceptions import NotFound, ParseError
 from pydantic import ValidationError
-
-from app.models import *
-from app.serializers.lessons import GroupLessonsSerializer
 from app.typing import SettingsRequest
 from app.modules import LessonsGenerator
+
+from app.models import Group, Lesson
+from app.serializers.lessons import GroupLessonsSerializer
 from diplom.serializers.default import DefaultSerializer
 
 
 class GroupLessonsView(APIView):
 
-    def get(self, request):
-        group = request.GET.get('group', None)
-        if not group or not (group := Group.objects.filter(id=group, is_active=True).prefetch_related(
-            Prefetch('lessons', Lesson.objects.filter(is_active=True).select_related('teacher', 'cabinet'))
+    def get(self, request, group_id):
+        if not (group := Group.objects.filter(id=group_id, is_active=True).prefetch_related(
+            Prefetch('lessons', Lesson.objects.filter(is_active=True).select_related('teacher'))
         ).first()):
             raise NotFound('group not found')
 
