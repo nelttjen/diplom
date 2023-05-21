@@ -12,11 +12,9 @@ services:
       - redis_celery_network
 
   celery:
-    image: celery-app
-    restart: unless-stopped
     build: ./backend/django-app/
+    restart: unless-stopped
     container_name: celery-diplom
-
     command:
       - celery
       - -A
@@ -38,21 +36,18 @@ services:
 
 
   django-migrate:
-    image: docker-app:django
     container_name: django-migrate-diplom
     build: ./backend/django-app/
     command:
       - sh
       - -c
       - "python manage.py migrate"
-#      - "python manage.py makemigrations && echo 'migrations done, migrating...' && python manage.py migrate"
     networks:
       - postgres_network
     depends_on:
       - redis
 
   django:
-    image: docker-app:django
     container_name: django-app-diplom
     build: ./backend/django-app/
     volumes:
@@ -105,7 +100,7 @@ services:
       - "9000:9000"
     container_name: chvetochek-diplom
     depends_on:
-      - redis
+      - celery
     networks:
       - redis_celery_network
 
