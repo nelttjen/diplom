@@ -1,7 +1,7 @@
 from django.urls import path
 
 from .views import *
-from .api.group import GroupListView
+from .api.groups import GroupListView
 from .api.lessons import GroupLessonsView
 from .api.lesson_schedule import ScheduleView, ScheduleListView
 
@@ -14,6 +14,5 @@ apipatterns = [
 
 urlpatterns = [
     path('', index, name='main'),
-    path('schedules/', shedules, name='schedules'),
-    path('schedules/<int:schedule_id>/', show_schedule, name='show_schedule')
 ] + apipatterns
+

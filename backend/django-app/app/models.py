@@ -15,7 +15,7 @@ class Lesson(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f'Пара: {self.name} - Кабинет {self.cabinet.name}'
+        return f'Пара: {self.name} - Кабинет {self.cabinet.name}, {self.teacher.__str__()}'
 
     class Meta:
         db_table = 'lessons'
@@ -57,7 +57,7 @@ class Teacher(models.Model):
     last_name = models.CharField(verbose_name='Фамилия', max_length=1000)
     
     def __str__(self):
-        return f'Препод {self.first_name} {self.last_name}'
+        return f'{self.first_name} {self.last_name}'
     
     class Meta:
         db_table = 'teachers'
