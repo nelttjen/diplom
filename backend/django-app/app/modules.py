@@ -65,11 +65,9 @@ class LessonsGenerator:
 
         while group_ids:
             gr_id = group_ids.pop()
-
             group = self.groups[gr_id]
 
             self.generated.add_group(gr_id)
-
             self.split_lessons(gr_id)
 
             group_lesson_list = sorted(self.settings.groups[gr_id], key=lambda x: (x.count, x.lesson_name), reverse=True)

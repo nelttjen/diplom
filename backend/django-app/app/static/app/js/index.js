@@ -3,6 +3,8 @@ let last_selected = null;
 let last_selected_name = null;
 let commit_values = {};
 
+let ENDPOINT = "http://127.0.0.1:8000"
+
 function get_response(response) {
     let raw = response;
     try {
@@ -16,26 +18,32 @@ function get_response(response) {
     return response;
   }
 
+function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+}
+
+
 function select_group() {
     let selected = $('#group-select');
     used_groups.push(selected.val());
     last_selected = selected.val();
     $.ajax({
         type: "GET",
-        url: `http://localhost:8000/api/group/${last_selected}/lessons/`,
+        url: `${ENDPOINT}/api/group/${last_selected}/lessons/`,
     }).done((response => {
         response = get_response(response);
-        // console.log(response);
         last_selected_name = response.extra.group_name;
         html = 
         `
         Группа ${response.extra.group_name}:
         <div id="group-lesson-inputs">
         `;
-        $.each(response.content, function (indexInArray, valueOfElement) { 
+        $.each(response.content, function (i, val) {
             add_html = `<div class="lesson-input">
-            <label for="lesson${valueOfElement.id}-input">Кол-во пар - ${valueOfElement.name}</label>
-            <input id="lesson${valueOfElement.id}-input" value="4" class="form-control" less-index="${valueOfElement.id}" less-name="${valueOfElement.name}">
+            <label for="lesson${val.id}-input">Кол-во пар - ${val.name}</label>
+            <input id="lesson${val.id}-input" value="4" class="form-control" less-index="${val.id}" less-name="${val.name}">
             </div>
             `;
             html += add_html;
@@ -46,7 +54,7 @@ function select_group() {
         buttons();
     })).fail((response) => {
         response = get_response(response);
-        alert(response.msg); 
+        alert(response.errors.msg);
     });
 }
 
@@ -64,15 +72,12 @@ function commit_group() {
         };
         values.push(new_obj);
     });
-    // let obj_ = {};
-    // obj_[last_selected] = values;
-    // commit_values.push(obj_);
     commit_values[last_selected] = values
     
     let exclude_groups = used_groups.join(',');
     $.ajax({
         type: "GET",
-        url: `http://localhost:8000/api/group/?exclude=${exclude_groups}`,
+        url: `${ENDPOINT}/api/group/?exclude=${exclude_groups}`,
     })
     .done((response) => {
         response = get_response(response);
@@ -110,23 +115,24 @@ function commit_group() {
     })
     .fail((response) => {
         response = get_response(response);
-        alert(response.msg);
+        alert(response.errors.msg);
     });
 }
 
 function generate() {
-    console.log(commit_values);
-
     $.ajax({
         type: "POST",
-        url: "http://localhost:8000/api/group/lessons/",
+        url: `${ENDPOINT}/api/generate/`,
         data: {groups: JSON.stringify(commit_values)},
+        headers: {
+            "X-CSRFToken": getCookie("csrftoken")
+        }
     }).done((r) => {
         response = get_response(r);
         alert("ok");
     }).fail((r) => {
         response = get_response(r);
-        alert(response.msg);
+        alert(response.errors.msg);
     });
 }
 

@@ -110,11 +110,6 @@ class GenerateList(pydantic.BaseModel):
 
         available = av_cab and av_teacher and av_index
 
-        # print('cab', day, cabinet, av_cab)
-        # print('teacher', day, teacher, av_teacher)
-        # print('index', day, index, av_index)
-        # print('total for day', day, available)
-
         return available
 
     def set_lesson_for_group(self, day, index, group, lesson, cabinet, teacher):

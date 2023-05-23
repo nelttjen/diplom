@@ -1,13 +1,15 @@
 import json
 
 from django.db.models import Prefetch
+from django.views.decorators.csrf import csrf_exempt
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.exceptions import NotFound, ParseError
 from pydantic import ValidationError
+
 from app.typing import SettingsRequest
 from app.modules import LessonsGenerator
-
 from app.models import Group, Lesson
 from app.serializers.lessons import GroupLessonsSerializer
 from diplom.serializers.default import DefaultSerializer
@@ -27,6 +29,11 @@ class GroupLessonsView(APIView):
             'extra': {'group_name': group.name}
         }).data)
 
+
+class GenerateView(APIView):
+    permission_classes = (AllowAny, )
+
+    @csrf_exempt
     def post(self, request):
 
         settings = json.loads(request.data.get('groups', '{}'))
