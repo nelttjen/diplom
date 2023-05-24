@@ -26,9 +26,9 @@ env = load_dotenv(BASE_DIR / 'diplom/.env')
 SECRET_KEY = os.environ.get('secret_key', 'unsafe-key')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*', ]
 
 # Application definition
 
@@ -168,9 +168,18 @@ CELERY_RESULT_SERIALIZER = 'json'
 
 
 DEBUG_TOOLBAR_CONFIG = {
-    'SHOW_TOOLBAR_CALLBACK': lambda request: True,
+    'SHOW_TOOLBAR_CALLBACK': lambda request: DEBUG,
 }
 
 REST_FRAMEWORK = {
     'EXCEPTION_HANDLER': 'diplom.exceptions.custom_exception_handler',
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer',
+    ]
 }
+
+if DEBUG:
+    REST_FRAMEWORK['DEFAULT_RENDERER_CLASSES'] = [
+        'rest_framework.renderers.JSONRenderer',
+        'rest_framework.renderers.BrowsableAPIRenderer',
+    ]

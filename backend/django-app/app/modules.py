@@ -53,6 +53,45 @@ class LessonsGenerator:
                 self.settings.groups[gr_id].append(new_lesson)
                 lesson.count = 2
 
+    def process_lesson(self, group, lesson, setup=None):
+
+        gr_lesson = self.lessons[lesson.id]
+
+        cabinet = gr_lesson.cabinet_id
+        teacher = gr_lesson.teacher_id
+
+        random_days = list(self.days)
+        random.shuffle(random_days)
+
+        if not isinstance(setup, list):
+            setup = list(random.choice(self.random_pair_choices))
+
+        while random_days:
+            this_setup = setup.copy()
+            day = random_days.pop(0)
+
+            if lesson.count == 0:
+                break
+
+            while this_setup:
+                index = this_setup.pop(0)
+
+                if lesson.count == 0:
+                    continue
+
+                if not self.generated.is_available(day=day, index=index, cabinet=cabinet, teacher=teacher,
+                                                   group=group.id):
+                    print(f'not available: {day} {index} {group}')
+                    continue
+                if len(getattr(self.generated, day)[group.id]) >= group.max_day:
+                    print(f'max this day: {day}')
+                    continue
+
+                self.generated.set_lesson_for_group(day=day, index=index,
+                                                    cabinet=cabinet, teacher=teacher,
+                                                    group=group.id, lesson=lesson.id)
+                lesson.count -= 1
+
     def generate(self):
         group_ids = list(self.settings.groups.keys())
         lesson_ids = []
@@ -73,40 +112,18 @@ class LessonsGenerator:
             group_lesson_list = sorted(self.settings.groups[gr_id], key=lambda x: (x.count, x.lesson_name), reverse=True)
 
             for lesson in group_lesson_list:
-                gr_lesson = self.lessons[lesson.id]
-
-                cabinet = gr_lesson.cabinet_id
-                teacher = gr_lesson.teacher_id
-
-                random_days = list(self.days)
-                random.shuffle(random_days)
-
-                while random_days:
-                    day = random_days.pop(0)
-
-                    if lesson.count == 0:
-                        break
-
-                    setup = list(random.choice(self.random_pair_choices))
-
-                    while setup:
-                        index = setup.pop(0)
-
-                        if lesson.count == 0:
-                            continue
-
-                        if not self.generated.is_available(day=day, index=index, cabinet=cabinet, teacher=teacher,
-                                                           group=gr_id):
-                            continue
-                        if len(getattr(self.generated, day)[gr_id]) >= group.max_day:
-                            continue
-
-                        self.generated.set_lesson_for_group(day=day, index=index,
-                                                            cabinet=cabinet, teacher=teacher,
-                                                            group=gr_id, lesson=lesson.id)
-                        lesson.count -= 1
+                self.process_lesson(group, lesson)
                 if lesson.count:
-                    raise Exception(f'{self.lessons[lesson.id].name}: cabinet or teacher reached limit')
+                    print(f'starting additional checks for {lesson} {gr_id}, before: {lesson.count}')
+                    self.process_lesson(group, lesson, setup=[5, 6])
+                    print(f'after cheks: {lesson.count}')
+                    if lesson.count:
+                        ret_dict = self.generated.to_representation(groups=self.groups, lessons=self.lessons)
+                        GeneratedLessons.objects.create(
+                            name="failed",
+                            weekdays=ret_dict
+                        )
+                        raise Exception(f'{self.lessons[lesson.id].name}: cabinet or teacher reached limit')
 
         ret_dict = self.generated.to_representation(groups=self.groups, lessons=self.lessons)
         GeneratedLessons.objects.create(
