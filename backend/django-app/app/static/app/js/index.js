@@ -3,7 +3,7 @@ let last_selected = null;
 let last_selected_name = null;
 let commit_values = {};
 
-let ENDPOINT = "http://127.0.0.1:8000"
+let ENDPOINT = "http://127.0.0.1"
 
 function get_response(response) {
     let raw = response;
